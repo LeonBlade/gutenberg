@@ -34,6 +34,14 @@ import {
 	ExternalLink,
 } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
+import {
+	LEFT,
+	RIGHT,
+	UP,
+	DOWN,
+	BACKSPACE,
+	ENTER,
+} from '@wordpress/keycodes';
 import { withSelect } from '@wordpress/data';
 import {
 	BlockAlignmentToolbar,
@@ -41,10 +49,11 @@ import {
 	BlockIcon,
 	InspectorControls,
 	MediaPlaceholder,
+	URLPopover,
 	RichText,
 } from '@wordpress/block-editor';
 import { mediaUpload } from '@wordpress/editor';
-import { Component } from '@wordpress/element';
+import { Component, useState, useCallback, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { getPath } from '@wordpress/url';
 import { withViewportMatch } from '@wordpress/viewport';
@@ -95,6 +104,116 @@ const isTemporaryImage = ( id, url ) => ! id && isBlobURL( url );
  * @return {boolean} Is the url an externally hosted url?
  */
 const isExternalImage = ( id, url ) => url && ! id && ! isBlobURL( url );
+
+const ImageURLInputUI = ( {
+	onChangeopenInNewTab,
+	onChangeUrl,
+	openInNewTab,
+	url,
+} ) => {
+	const [ isOpen, setIsOpen ] = useState( false );
+	const openLinkUI = useCallback( () => {
+		setIsOpen( true );
+	} );
+	const closeLinkUI = useCallback( () => {
+		setIsOpen( false );
+	} );
+
+	const [ isEditingLink, setIsEditingLink ] = useState( false );
+	const startEditLink = useCallback( () => {
+		setIsEditingLink( true );
+	} );
+	const stopEditLink = useCallback( () => {
+		setIsEditingLink( false );
+	} );
+
+	const [ urlInput, setUrlInput ] = useState( null );
+
+	const autocompleteRef = useRef( null );
+
+	const onClickOutside = useCallback( () => {
+		return ( event ) => {
+			// The autocomplete suggestions list renders in a separate popover (in a portal),
+			// so onClickOutside fails to detect that a click on a suggestion occurred in the
+			// LinkContainer. Detect clicks on autocomplete suggestions using a ref here, and
+			// return to avoid the popover being closed.
+			const autocompleteElement = autocompleteRef.current;
+			if ( autocompleteElement && autocompleteElement.contains( event.target ) ) {
+				return;
+			}
+			setIsOpen( false );
+			setUrlInput( null );
+			stopEditLink();
+		};
+	} );
+	const stopPropagation = useCallback( () => {
+		return ( event ) => {
+			event.stopPropagation();
+		};
+	} );
+	const onSubmitLinkChange = useCallback( () => {
+		return ( event ) => {
+			if ( urlInput ) {
+				onChangeUrl( urlInput );
+			}
+			stopEditLink();
+			setUrlInput( null );
+			event.preventDefault();
+		};
+	} );
+	const onLinkEditorKeyDown = useCallback( () => {
+		return ( event ) => {
+			if ( [ LEFT, DOWN, RIGHT, UP, BACKSPACE, ENTER ].indexOf( event.keyCode ) > -1 ) {
+				// Stop the key event from propagating up to ObserveTyping.startTypingInTextField.
+				event.stopPropagation();
+			}
+		};
+	} );
+
+	return (
+		<>
+			<IconButton
+				icon="admin-links"
+				label={ url ? __( 'Edit Link' ) : __( 'Insert Link' ) }
+				aria-expanded={ isOpen }
+				onClick={ openLinkUI }
+			/>
+			{ isOpen && (
+				<URLPopover
+					onClickOutside={ onClickOutside() }
+					onClose={ closeLinkUI }
+					renderSettings={ () => (
+						<ToggleControl
+							label={ __( 'Open in New Tab' ) }
+							checked={ openInNewTab }
+							onChange={ onChangeopenInNewTab }
+						/>
+					) }
+				>
+					{ ( ! url || isEditingLink ) && (
+						<URLPopover.LinkEditor
+							className="editor-format-toolbar__link-container-content block-editor-format-toolbar__link-container-content"
+							value={ urlInput || url }
+							onChangeInputValue={ setUrlInput }
+							onKeyDown={ onLinkEditorKeyDown() }
+							onKeyPress={ stopPropagation() }
+							onSubmit={ onSubmitLinkChange() }
+							autocompleteRef={ autocompleteRef }
+						/>
+					) }
+					{ ( url && ! isEditingLink ) && (
+						<URLPopover.LinkViewer
+							className="editor-format-toolbar__link-container-content block-editor-format-toolbar__link-container-content"
+							onKeyPress={ stopPropagation() }
+							url={ url }
+							editLink={ startEditLink }
+						/>
+					) }
+				</URLPopover>
+			) }
+		</>
+	);
+};
 
 class ImageEdit extends Component {
 	constructor( { attributes } ) {
@@ -238,6 +357,15 @@ class ImageEdit extends Component {
 	}
 
 	onSetCustomHref( value ) {
+		const { attributes } = this.props;
+		const { linkDestination } = attributes;
+		if ( linkDestination !== LINK_DESTINATION_CUSTOM ) {
+			this.props.setAttributes( {
+				linkDestination: LINK_DESTINATION_CUSTOM,
+				href: value,
+			} );
+			return;
+		}
 		this.props.setAttributes( { href: value } );
 	}
 
@@ -388,15 +516,25 @@ class ImageEdit extends Component {
 					onChange={ this.updateAlignment }
 				/>
 				{ url && (
-					<Toolbar>
-						<IconButton
-							className={ classnames( 'components-icon-button components-toolbar__control', { 'is-active': this.state.isEditing } ) }
-							label={ __( 'Edit image' ) }
-							aria-pressed={ this.state.isEditing }
-							onClick={ this.toggleIsEditing }
-							icon={ editImageIcon }
-						/>
-					</Toolbar>
+					<>
+						<Toolbar>
+							<IconButton
+								className={ classnames( 'components-icon-button components-toolbar__control', { 'is-active': this.state.isEditing } ) }
+								label={ __( 'Edit image' ) }
+								aria-pressed={ this.state.isEditing }
+								onClick={ this.toggleIsEditing }
+								icon={ editImageIcon }
+							/>
+						</Toolbar>
+						<Toolbar>
+							<ImageURLInputUI
+								url={ href || '' }
+								openInNewTab={ linkTarget === '_blank' }
+								onChangeUrl={ this.onSetCustomHref }
+								onChangeopenInNewTab={ this.onSetNewTab }
+							/>
+						</Toolbar>
+					</>
 				) }
 			</BlockControls>
 		);

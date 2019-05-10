@@ -1,0 +1,32 @@
+{
+	"name": "@wordpress/transform-styles",
+	"version": "2.3.0",
+	"description": "Tranfrom styles module for WordPress.",
+	"author": "The WordPress Contributors",
+	"license": "GPL-2.0-or-later",
+	"keywords": [
+		"wordpress",
+		"transform",
+		"styles"
+	],
+	"homepage": "https://github.com/WordPress/gutenberg/tree/master/packages/transform-styles/README.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/WordPress/gutenberg.git",
+		"directory": "packages/transform-styles"
+	},
+	"bugs": {
+		"url": "https://github.com/WordPress/gutenberg/issues"
+	},
+	"main": "build/index.js",
+	"module": "build-module/index.js",
+	"react-native": "src/index",
+	"dependencies": {
+		"@babel/runtime": "^7.4.4",
+		"@wordpress/compose": "file:../compose",
+		"lodash": "^4.17.11"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

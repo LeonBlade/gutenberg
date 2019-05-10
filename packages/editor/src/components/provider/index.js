@@ -15,11 +15,12 @@ import { BlockEditorProvider } from '@wordpress/block-editor';
 import apiFetch from '@wordpress/api-fetch';
 import { addQueryArgs } from '@wordpress/url';
 import { decodeEntities } from '@wordpress/html-entities';
+import transformStyles from '@wordpress/transform-styles';
 
 /**
  * Internal dependencies
  */
-import transformStyles from '../../editor-styles';
+
 import { mediaUpload } from '../../utils';
 import ReusableBlocksButtons from '../reusable-blocks-buttons';
 

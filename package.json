@@ -52,6 +52,7 @@
 		"@wordpress/rich-text": "file:packages/rich-text",
 		"@wordpress/shortcode": "file:packages/shortcode",
 		"@wordpress/token-list": "file:packages/token-list",
+		"@wordpress/transform-styles": "file:packages/transform-styles",
 		"@wordpress/url": "file:packages/url",
 		"@wordpress/viewport": "file:packages/viewport",
 		"@wordpress/wordcount": "file:packages/wordcount"

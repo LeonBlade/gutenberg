@@ -510,6 +510,12 @@
 		"parent": "packages"
 	},
 	{
+		"title": "@wordpress/transform-styles",
+		"slug": "packages-transform-styles",
+		"markdown_source": "https://raw.githubusercontent.com/WordPress/gutenberg/master/packages/transform-styles/README.md",
+		"parent": "packages"
+	},
+	{
 		"title": "@wordpress/url",
 		"slug": "packages-url",
 		"markdown_source": "https://raw.githubusercontent.com/WordPress/gutenberg/master/packages/url/README.md",
